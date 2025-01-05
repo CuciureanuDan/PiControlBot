@@ -1,0 +1,12 @@
+# exclude credentials file
+credentials.env
+
+# exclude directories
+
+logs/
+__pycache__/
+venv/
+
+# exclude test codes
+tester.py
+telmain.py
