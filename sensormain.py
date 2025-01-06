@@ -1,13 +1,9 @@
 import time
 import logging
-import bme680   # Replace with the actual library for your sensor
+import bme680   
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[logging.FileHandler("logs/sensor.log"), logging.StreamHandler()]
-)
+logger = logging.getLogger(__name__)
 
 class SensorManager:
     def __init__(self, stabilization_time=300, read_interval=2):
@@ -40,9 +36,9 @@ class SensorManager:
             self.sensor.set_gas_heater_duration(150)
             self.sensor.select_gas_heater_profile(0)
 
-            logging.info("Sensor initialized successfully.")
+            logger.info("Sensor initialized successfully.")
         except Exception as e:
-            logging.error(f"Failed to initialize sensor: {e}")
+            logger.error(f"Failed to initialize sensor: {e}")
             raise
 
     def stabilize_sensor(self):
@@ -54,18 +50,19 @@ class SensorManager:
         start_time = time.time()
         curr_time = time.time()
         burn_in_data = []
-        logging.info("Starting sensor stabilization.")
+        logger.info("Starting sensor stabilization.")
         while curr_time - start_time < self.stabilization_time:
             curr_time = time.time()
             if self.sensor.get_sensor_data() and self.sensor.data.heat_stable:
                 gas = self.sensor.data.gas_resistance
                 burn_in_data.append(gas)
                 #print('Gas: {0} Ohms'.format(gas))
-                time.sleep(1) # extract data every 1second
+                time.sleep(self.read_interval) # extract data every 1second or read_interval
 
         self.gas_baseline = sum(burn_in_data[-50:]) / 50.0
 
         self.is_stabilized = True
+        logger.info("The stabilization has finished.")
 
 
     def read_sensor(self):
@@ -76,16 +73,18 @@ class SensorManager:
             dict: A dictionary with temperature, humidity, and air quality.
         """
         if self.sensor.get_sensor_data():
-            output = "{0:.2f} C,{1:.2f} hPa,{2:.2f} %RH".format(
+            output =("Temperature: {0:.2f} C\n"
+                      "Pressure: {1:.2f} hPa \n"
+                      "Humidity: {2:.2f} %RH").format(
                 self.sensor.data.temperature, 
                 self.sensor.data.pressure, 
-                self.sensor.data.humidity)
+                self.sensor.data.humidity) 
 
         if  self.is_stabilized:
-            logging.info("All the data will be sent.")
+            logger.info("All the data will be sent.")
             return self.air_quality(output)
         else:
-            logging.warning("Gas Sensor is not stabilized. No data about gas")
+            logger.warning("Gas Sensor is not stabilized. No data about gas")
             return output       
 
     def air_quality(self, output):
@@ -99,7 +98,12 @@ class SensorManager:
         Returns:
             str: Output string with the air quality score or an error message.
         """
+
+        # Set the humidity baseline to 40%, an optimal indoor humidity.
         hum_baseline = 40.0
+
+        # This sets the balance between humidity and gas reading in the
+        # calculation of air_quality_score (25:75, humidity:gas)
         hum_weighting = 0.25
 
         for attempt in range(3):  # Retry up to 3 times
@@ -136,14 +140,14 @@ class SensorManager:
                     # Return the result with air quality score.
                     return f"{output}, Air Quality score: {air_quality_score:.2f}"
 
-                logging.warning(f"Attempt {attempt + 1}: Sensor data not heat-stable or unavailable.")
+                logger.warning(f"Attempt {attempt + 1}: Sensor data not heat-stable or unavailable.")
             except Exception as e:
-                logging.error(f"Attempt {attempt + 1}: Error reading sensor data: {e}")
+                logger.error(f"Attempt {attempt + 1}: Error reading sensor data: {e}")
 
             time.sleep(1)  # Small delay before retrying
 
         # If all attempts fail, return an error message.
-        logging.error("Failed to retrieve air quality data after 3 attempts.")
+        logger.error("Failed to retrieve air quality data after 3 attempts.")
         return f"{output}, Air Quality data unavailable"
 
 

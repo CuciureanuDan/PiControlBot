@@ -3,9 +3,10 @@ from telegram.ext import filters, MessageHandler, Application, CommandHandler, C
 from dotenv import load_dotenv
 import os
 import logging
+import threading
 from functools import wraps
 from sensormain import SensorManager
-
+from datetime import datetime
 
 load_dotenv('credentials.env')
 
@@ -13,11 +14,22 @@ load_dotenv('credentials.env')
 ALLOWED_USERS = set(map(int, os.getenv("ALLOWED_USERS","").split(',')))
 
 
+# Ensure the 'logs/' directory exists
+log_dir = "logs"
+os.makedirs(log_dir, exist_ok=True)
+
+#create a unique filename for every running of the script
+log_filename = os.path.join(log_dir, datetime.now().strftime("log_%Y-%m-%d_%H-%M.log"))
+
 # This part is for setting up logging module, so you will know when (and why) things don't work as expected:
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+    level=logging.INFO,
+    handlers = [
+        logging.StreamHandler(), # log to console
+        logging.FileHandler(log_filename, mode='w' ) # log to file
+    
+])
 # set higher logging level for httpx to avoid all GET and POST requests being logged
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
@@ -34,12 +46,13 @@ def restricted(func):
 # Bot command handlers
 #@restricted
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info("The user used /START.")
     await update.message.reply_text("Welcome to IoT Radio Bot! Use /status to get sensor data. ")
-    print("Start setted") # just a test
+    #print("Start setted") # just a test
 
 @restricted
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    #data = get_sensor_data() # TO BE ADDED
+    logging.info("The user used /STATUS")
     sensor_manager: SensorManager = context.bot_data['sensor_manager']
     
     output = "Current sensor data:"
@@ -61,10 +74,12 @@ def main():
         raise ValueError("Telegram API key not found. Please set TEL_API_KEY in your .env file.")
     
 
-    sensor_manager = SensorManager(90,1)
+    sensor_manager = SensorManager(120,1)
 
     try:
-        sensor_manager.stabilize_sensor()
+        #sensor_manager.stabilize_sensor()
+        stabilize_thread = threading.Thread(target=sensor_manager.stabilize_sensor)
+        stabilize_thread.start()
     except Exception as e:
         logging.error(f"Failed to stabilize sensor: {e}")
  
