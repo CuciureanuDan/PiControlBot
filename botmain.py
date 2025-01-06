@@ -7,6 +7,7 @@ import threading
 from functools import wraps
 from sensormain import SensorManager
 from datetime import datetime
+from systeminfo import GetSystemInfo
 
 load_dotenv('credentials.env')
 
@@ -47,7 +48,7 @@ def restricted(func):
 #@restricted
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info("The user used /START.")
-    await update.message.reply_text("Welcome to IoT Radio Bot! Use /status to get sensor data. ")
+    await update.message.reply_text("Welcome to IoT Radio Bot!\nUse /status to get sensor data.\nUse /inforpi to get info about CPU temp and memory.\nUse /uptime to get the RPI uptime. ")
     #print("Start setted") # just a test
 
 @restricted
@@ -59,6 +60,20 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sensor_data = sensor_manager.read_sensor()  # Retrieve sensor data
     await update.message.reply_text(f"{output}\n{sensor_data}")
     #await update.message.reply_text(f"Current Sensor Data:\n{data}")
+
+@restricted
+async def inforpi(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info("The user used /INFORPI")
+    sys_info = GetSystemInfo()
+    output = f"Cpu Temperature: {sys_info.cpu_temp()}C\n{sys_info.mem_info_string()}"
+    await update.message.reply_text(output)
+
+@restricted
+async def uptime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info("The user used /UPTIME")
+    sys_info = GetSystemInfo()
+    await update.message.reply_text(sys_info.uptime_string())
+
 
 
 # must be added last
@@ -78,7 +93,7 @@ def main():
 
     try:
         #sensor_manager.stabilize_sensor()
-        stabilize_thread = threading.Thread(target=sensor_manager.stabilize_sensor)
+        stabilize_thread = threading.Thread(target=sensor_manager.stabilize_sensor, daemon = True )
         stabilize_thread.start()
     except Exception as e:
         logging.error(f"Failed to stabilize sensor: {e}")
@@ -93,6 +108,9 @@ def main():
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("status", status))
+    application.add_handler(CommandHandler("inforpi", inforpi))
+    application.add_handler(CommandHandler("uptime", uptime))
+    
     application.add_handler(MessageHandler(filters.COMMAND, unknown))
     # Start the bot (asynchronously)
     application.run_polling()

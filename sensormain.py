@@ -138,7 +138,7 @@ class SensorManager:
                     air_quality_score = hum_score + gas_score
 
                     # Return the result with air quality score.
-                    return f"{output}, Air Quality score: {air_quality_score:.2f}"
+                    return f"{output}\nAir Quality score: {air_quality_score:.2f}"
 
                 logger.warning(f"Attempt {attempt + 1}: Sensor data not heat-stable or unavailable.")
             except Exception as e:
