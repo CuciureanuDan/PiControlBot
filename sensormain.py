@@ -85,7 +85,22 @@ class SensorManager:
             return self.air_quality(output)
         else:
             logger.warning("Gas Sensor is not stabilized. No data about gas")
-            return output       
+            return output
+    
+    def get_read_sensor(self) -> dict :
+       """
+       Read data from the BME680 sensor for database population
+
+       Returns:
+         dict: A dictionary with temperature and humidity.
+       """
+       # FUTURE TO DO: combine this function with simple read_sensor
+       while self.sensor.get_sensor_data():
+            return {
+                  "temperature": self.sensor.data.temperature, 
+                  "humidity": self.sensor.data.humidity
+            }
+   
 
     def air_quality(self, output):
         """

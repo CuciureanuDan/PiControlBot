@@ -10,3 +10,6 @@ venv/
 # exclude test codes
 tester.py
 telmain.py
+help.py
+nohup.out
+sensor_data.db

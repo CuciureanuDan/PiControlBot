@@ -8,6 +8,7 @@ from functools import wraps
 from sensormain import SensorManager
 from datetime import datetime
 from systeminfo import GetSystemInfo
+from data_filler import fill_database
 
 load_dotenv('credentials.env')
 
@@ -112,6 +113,10 @@ def main():
     application.add_handler(CommandHandler("uptime", uptime))
     
     application.add_handler(MessageHandler(filters.COMMAND, unknown))
+      
+    data_filler_thread = threading.Thread(target=fill_database, args=(sensor_manager,), daemon=True)
+    data_filler_thread.start()
+ 
     # Start the bot (asynchronously)
     application.run_polling()
 
