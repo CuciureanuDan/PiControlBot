@@ -9,6 +9,7 @@ from sensormain import SensorManager
 from datetime import datetime
 from systeminfo import GetSystemInfo
 from data_filler import fill_database
+from graph import generate_graph
 
 load_dotenv('credentials.env')
 
@@ -49,7 +50,14 @@ def restricted(func):
 #@restricted
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info("The user used /START.")
-    await update.message.reply_text("Welcome to IoT Radio Bot!\nUse /status to get sensor data.\nUse /inforpi to get info about CPU temp and memory.\nUse /uptime to get the RPI uptime. ")
+    await update.message.reply_text(
+         "Welcome to IoT Radio Bot!\n"
+         "Use /status to get sensor data.\n"
+         "Use /inforpi to get info about CPU temp and memory.\n"
+         "Use /uptime to get the RPI uptime.\n"
+         "Use /graph [hours] to get a graph with temperature and humidity. "
+         "Default graph duration is 12h if no argument is specified."
+     )
     #print("Start setted") # just a test
 
 @restricted
@@ -75,7 +83,26 @@ async def uptime(update: Update, context: ContextTypes.DEFAULT_TYPE):
     sys_info = GetSystemInfo()
     await update.message.reply_text(sys_info.uptime_string())
 
+@restricted
+async def graph(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
+    logging.info("The user used /GRAPH")    
+    # Extract the argument from the command    
+    try:
+        hours = int(context.args[0])
+    except (IndexError, ValueError):
+        logging.info("No argument, or corect one for graph generate.")  
+        hours = 12
+    
+    generate_graph(hours)
+    image_path = "tmp/temperature.png"
+
+    if os.path.isfile(image_path):
+        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=open(image_path, 'rb'))
+    else:
+        # Notify the user if the image is not found
+        logging.error("The graph image is not found.")
+        update.message.reply_text(f"The graph image is not found.")
 
 # must be added last
 #@restricted # commented just for test
@@ -90,7 +117,7 @@ def main():
         raise ValueError("Telegram API key not found. Please set TEL_API_KEY in your .env file.")
     
 
-    sensor_manager = SensorManager(120,1)
+    sensor_manager = SensorManager(300,1)
 
     try:
         #sensor_manager.stabilize_sensor()
@@ -111,9 +138,10 @@ def main():
     application.add_handler(CommandHandler("status", status))
     application.add_handler(CommandHandler("inforpi", inforpi))
     application.add_handler(CommandHandler("uptime", uptime))
+    application.add_handler(CommandHandler("graph", graph))
     
     application.add_handler(MessageHandler(filters.COMMAND, unknown))
-      
+    
     data_filler_thread = threading.Thread(target=fill_database, args=(sensor_manager,), daemon=True)
     data_filler_thread.start()
  

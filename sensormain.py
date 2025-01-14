@@ -65,13 +65,14 @@ class SensorManager:
         logger.info("The stabilization has finished.")
 
 
-    def read_sensor(self):
+    def read_sensor(self) -> str:
         """
         Read data from the BME680 sensor.
 
         Returns:
-            dict: A dictionary with temperature, humidity, and air quality.
+            string: A string with temperature, data pressure,  humidity, and air quality if the sensor is stabilized.
         """
+        output = "No sensor data available."
         if self.sensor.get_sensor_data():
             output =("Temperature: {0:.2f} C\n"
                       "Pressure: {1:.2f} hPa \n"
