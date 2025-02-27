@@ -6,8 +6,12 @@ logger = logging.getLogger(__name__)
 
 class GetSystemInfo:
 
-    def __init__(self):
+    """
+    A Class to gather and process system information from a Raspberry Pi.
+    """
 
+    def __init__(self):
+      # for future implementations
       self.temp_threshold = 85
       self.mem_proc_treshold = 85
 
@@ -55,6 +59,9 @@ class GetSystemInfo:
            return {"Error": f"Unexpected error: {e}"}
 
     def mem_info_string(self) -> str:
+        """
+        Returns the memory information as a formatted string.
+        """
         aux = self.mem_info()
         return (f"Memory info:\nTotal Memory: {aux['total_mem']:.2f} MB\n"
                 f"Available Memory: {aux['available_mem']:.2f} MB\n"
@@ -98,7 +105,6 @@ class GetSystemInfo:
 
 
 if __name__ == "__main__":
-    ### JUST FOR INTERN TESTS
     system_info = GetSystemInfo()
     memory_data = system_info.mem_info_string()
     print(memory_data)

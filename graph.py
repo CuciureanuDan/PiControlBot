@@ -6,6 +6,18 @@ import matplotlib.dates as mdates
 
 def generate_graph(hours):
    
+    """
+    Generate and saves a graph of temperature and humidity data for the past specified hours.
+
+    Retrieves sensor data from DB using the DataBaseHandler class.
+    Creates a figure with two subplots:
+     - first subplot displays temperature over time.
+     - second subplot displays humidity over time.
+
+    The graph is saved as PNG file ('./tmp/temperature.png'). If the output directory does not exist, it will be created.
+    Args:
+      hours (int): The number of past hours for which to retrieves and display sensor data.
+    """
     db = DataBaseHandler("sensor_data.db")
     data = db.get_hours_data(hours)  
            
@@ -50,5 +62,5 @@ def generate_graph(hours):
     # Close the plot to release memory
     plt.close()
 
-
-generate_graph(2)   
+if __name__ == "__main__":
+   generate_graph(2)   

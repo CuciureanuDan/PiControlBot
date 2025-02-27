@@ -36,6 +36,7 @@ logging.basicConfig(
 # set higher logging level for httpx to avoid all GET and POST requests being logged
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+# this decorator allows you to restrict the access of a handler to only the ALLOWED_USERS specified in .env file
 def restricted(func):
     @wraps(func)
     async def wrapped(update, context, *args, **kwargs):
@@ -47,8 +48,13 @@ def restricted(func):
     return wrapped
 
 # Bot command handlers
-#@restricted
+
+@restricted
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handles the /start command for the Telegram bot.
+    Sends a welcome message and provides information on available commands. 
+    """
     logging.info("The user used /START.")
     await update.message.reply_text(
          "Welcome to IoT Radio Bot!\n"
@@ -58,20 +64,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
          "Use /graph [hours] to get a graph with temperature and humidity. "
          "Default graph duration is 12h if no argument is specified."
      )
-    #print("Start setted") # just a test
 
 @restricted
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handles the /status command for Telegram bot.
+    Retrieves and sends the current sensor data to the user.
+    """
     logging.info("The user used /STATUS")
     sensor_manager: SensorManager = context.bot_data['sensor_manager']
     
     output = "Current sensor data:"
     sensor_data = sensor_manager.read_sensor()  # Retrieve sensor data
     await update.message.reply_text(f"{output}\n{sensor_data}")
-    #await update.message.reply_text(f"Current Sensor Data:\n{data}")
 
 @restricted
 async def inforpi(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handles the /inforpi command for Telegram bot.
+    Retrieves and sends info about the Raspberry Pi.
+    """
     logging.info("The user used /INFORPI")
     sys_info = GetSystemInfo()
     output = f"Cpu Temperature: {sys_info.cpu_temp()}C\n{sys_info.mem_info_string()}"
@@ -79,13 +91,21 @@ async def inforpi(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @restricted
 async def uptime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Handles the /uptime command for Telegram bot.
+    Retrieves and sends the system uptime info.
+    """
     logging.info("The user used /UPTIME")
     sys_info = GetSystemInfo()
     await update.message.reply_text(sys_info.uptime_string())
 
 @restricted
 async def graph(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-
+    """
+    Handles the /graph command for Telegram bot.
+    Generates and sends a temperature graph based on specific time range.
+    If no argument is provided or an invalid value is given, the default is 12 hours.
+    """
     logging.info("The user used /GRAPH")    
     # Extract the argument from the command    
     try:
@@ -105,7 +125,7 @@ async def graph(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         update.message.reply_text(f"The graph image is not found.")
 
 # must be added last
-#@restricted # commented just for test
+@restricted
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")   
 

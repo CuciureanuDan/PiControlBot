@@ -9,10 +9,9 @@ logger = logging.getLogger(__name__)
 
 def fill_database(sensor_manager, db_name="sensor_data.db"):
     """
-    Populates the database and alerts on temperature differents between reading too big or if humidity exceeds a certain threshold.
+    Populates the database with sensor readings at regular intervals.   
 
     :param sensor_manager: Object to fetch sensor data.
-    :param send_alert: Callback function to send Telegram alerts. 
     :param db_name: Name of the database file.
     """
     logging.info("Database population has started.")
@@ -20,14 +19,11 @@ def fill_database(sensor_manager, db_name="sensor_data.db"):
     try:
         while True:
             
-            logging.info("One insertion.") # delete later
             # get sensor data
             # looks like if there is imperfect connection i get None in data
             data = None # added
             while data == None: # added
                data = sensor_manager.get_read_sensor() # added
-            #data = sensor_manager.get_read_sensor() # original line
-            logging.info(f"data: {data}") # delete later
             db.insert_sensor_data(data)
             # wait 10 minutes between readings
             time.sleep(600)

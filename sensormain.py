@@ -6,6 +6,18 @@ import bme680
 logger = logging.getLogger(__name__)
 
 class SensorManager:
+
+    """
+    Manages the BME680 sensor, handling initialization, stabilization and data retrieval.
+
+    Attributes:
+      stabilization_time (int): Time in seconds for sensor stabilization.
+      read_interval (int): Interval in seconds between stabilization readings.
+      sensor : BME680 sensor object.
+      gas_baseline (float): Baseline gas resistance value.
+      is_stabilized (bool): Indicates whether the sensor is stabilized.
+    """
+
     def __init__(self, stabilization_time=300, read_interval=2):
         """
         Initialize the BME680 sensor manager.
@@ -57,7 +69,7 @@ class SensorManager:
                 gas = self.sensor.data.gas_resistance
                 burn_in_data.append(gas)
                 #print('Gas: {0} Ohms'.format(gas))
-                time.sleep(self.read_interval) # extract data every 1second or read_interval
+                time.sleep(self.read_interval) 
 
         self.gas_baseline = sum(burn_in_data[-50:]) / 50.0
 
@@ -70,7 +82,7 @@ class SensorManager:
         Read data from the BME680 sensor.
 
         Returns:
-            string: A string with temperature, data pressure,  humidity, and air quality if the sensor is stabilized.
+            str: A string with temperature, data pressure, humidity, and air quality (if the sensor is stabilized).
         """
         output = "No sensor data available."
         if self.sensor.get_sensor_data():
@@ -88,9 +100,9 @@ class SensorManager:
             logger.warning("Gas Sensor is not stabilized. No data about gas")
             return output
     
-    def get_read_sensor(self) -> dict :
+    def get_read_sensor(self) -> dict:
        """
-       Read data from the BME680 sensor for database population
+       Read data from the BME680 sensor for database population.
 
        Returns:
          dict: A dictionary with temperature and humidity.
@@ -115,8 +127,8 @@ class SensorManager:
             str: Output string with the air quality score or an error message.
         """
 
-        # Set the humidity baseline to 40%, an optimal indoor humidity.
-        hum_baseline = 40.0
+        # Set the humidity baseline to 50%, an optimal indoor humidity.
+        hum_baseline = 50.0
 
         # This sets the balance between humidity and gas reading in the
         # calculation of air_quality_score (25:75, humidity:gas)
